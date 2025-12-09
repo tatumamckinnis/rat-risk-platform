@@ -343,6 +343,7 @@ def main():
         with col2:
             assess_button = st.button("🔍 Assess Risk", type="primary", use_container_width=True)
         
+        # Process button click and store results in session state
         if assess_button and (address or selected_zip):
             with st.spinner("Analyzing location..."):
                 # Geocode if address provided
@@ -351,11 +352,9 @@ def main():
                     if lat is None:
                         st.error("Could not find address. Please try again.")
                         st.stop()
-                    
-                    # Extract ZIP from full address (simplified)
                     zip_code = selected_zip if selected_zip else None
                 else:
-                    lat, lon = 40.7128, -74.0060  # NYC center
+                    lat, lon = 40.7128, -74.0060
                     zip_code = selected_zip
                     full_address = f"ZIP Code {zip_code}"
                 
@@ -381,57 +380,44 @@ def main():
                 
                 level = risk_scorer.get_risk_level(score)
                 color = risk_scorer.get_risk_color(score)
+                
+                # Store in session state
+                st.session_state.risk_results = {
+                    'score': score,
+                    'level': level,
+                    'color': color,
+                    'factors': factors.to_dict() if factors is not None else {},
+                    'lat': lat,
+                    'lon': lon,
+                    'full_address': full_address,
+                    'zip_code': zip_code,
+                    'historical_complaints': historical_complaints,
+                }
+        
+        # Display results from session state (OUTSIDE the button block)
+        if 'risk_results' in st.session_state:
+            r = st.session_state.risk_results
             
-            # Display results
             st.markdown("---")
-            st.subheader(f"📍 {full_address if address else f'ZIP Code {zip_code}'}")
+            st.subheader(f"📍 {r['full_address']}")
             
             col1, col2 = st.columns([1, 1])
             
             with col1:
-                display_risk_score(score, level, color)
+                display_risk_score(r['score'], r['level'], r['color'])
                 
                 st.markdown("### Risk Factors")
-                if factors:
-                    display_factor_breakdown(factors.to_dict())
+                if r['factors']:
+                    display_factor_breakdown(r['factors'])
             
             with col2:
-                if lat and lon:
+                if r['lat'] and r['lon']:
                     st.markdown("### Location")
-                    display_map(lat, lon)
+                    display_map(r['lat'], r['lon'])
             
             # Historical chart
             st.markdown("### Historical Trends")
-            display_historical_chart(data, zip_code)
-            
-            # Generate report
-            st.markdown("### Detailed Report")
-            
-            with st.spinner("Generating report..."):
-                try:
-                    report_gen = get_report_generator()
-                    
-                    report = report_gen.generate_risk_report(
-                        location=full_address if address else f"ZIP Code {zip_code}",
-                        risk_score=score,
-                        historical_data={
-                            "total_complaints": int(historical_complaints),
-                            "recent_complaints": int(historical_complaints * 0.2),
-                            "yoy_trend": "+5%",
-                        },
-                        forecast_data={
-                            "next_month": int(historical_complaints / 12),
-                            "next_3_months": int(historical_complaints / 4),
-                            "confidence": "medium",
-                            "trend": "stable",
-                        },
-                    )
-                    
-                    st.markdown(report)
-                    
-                except Exception as e:
-                    st.warning(f"Could not generate detailed report: {e}")
-                    st.markdown(risk_scorer.explain_score(score, factors))
+            display_historical_chart(data, r['zip_code'])
     
     # =========================================================================
     # TAB 2: Image Analysis

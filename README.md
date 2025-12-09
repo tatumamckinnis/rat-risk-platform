@@ -40,8 +40,8 @@ streamlit run src/app.py
 
 ## Video Links
 
-- **Project Demo (3-5 min):** [Watch Demo](videos/demo.mp4) - Non-technical overview showing the application in action
-- **Technical Walkthrough (5-10 min):** [Watch Walkthrough](videos/technical_walkthrough.mp4) - Detailed explanation of ML techniques and code structure
+- **Project Demo (3-5 min):**  - Non-technical overview showing the application in action
+- **Technical Walkthrough (5-10 min):**  - Detailed explanation of ML techniques and code structure
 
 ## Evaluation
 
